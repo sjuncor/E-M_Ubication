@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { TouchableOpacity, StyleSheet, View } from "react-native";
+import { TouchableOpacity, StyleSheet, View, Alert } from "react-native";
 import { Text } from "react-native-paper";
+import axios from "axios"; // Importa Axios
 import Background from "../Background";
 import Logo from "../Logo";
 import Header from "../Header";
@@ -8,51 +9,58 @@ import Button from "../Button";
 import TextInput from "../TextInput";
 import BackButton from "../BackButton";
 import { theme } from "../../core/theme";
-import { emailValidator } from "../helpers/emailValidator";
-import { passwordValidator } from "../helpers/passwordValidator";
 
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState({ value: "", error: "" });
-  const [password, setPassword] = useState({ value: "", error: "" });
+  const [user, setUser] = useState("");
+  const [password, setPassword] = useState("");
 
-  const onLoginPressed = () => {
-    const emailError = emailValidator(email.value);
-    const passwordError = passwordValidator(password.value);
-    if (emailError || passwordError) {
-      setEmail({ ...email, error: emailError });
-      setPassword({ ...password, error: passwordError });
-      return;
+  const onLoginPressed = async () => {
+    try {
+      const response = await axios.get(`http://192.168.43.122:3000/usuario/${user}/${password}`);
+      if (response.data.length > 0) {
+        const userData = response.data[0];
+        if (userData.Tipo === 'Lider') {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Map", params: { u: user } }],
+          });
+        } else if (userData.Tipo === 'Empleado') {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Appsheet", params: { u: user } }],
+          });
+        } else {
+          Alert.alert("Error", "Tipo de usuario no reconocido");
+        }
+      } else {
+        Alert.alert("Error", "Usuario o contraseña incorrectos");
+      }
+    } catch (error) {
+      console.error("Error consultando la API:", error);
+      Alert.alert(
+        "Error",
+        "Hubo un problema al conectarse al servidor. Por favor, intenta de nuevo."
+      );
     }
-    navigation.reset({
-      index: 0,
-      routes: [{ name: "Dashboard" }],
-    });
   };
 
   return (
     <Background>
       <BackButton goBack={navigation.goBack} />
       <Logo />
-      <Header>Iniciar Sesion</Header>
+      <Header>Iniciar Sesión</Header>
       <TextInput
-        label="Correo"
+        label="Usuario"
         returnKeyType="next"
-        value={email.value}
-        onChangeText={(text) => setEmail({ value: text, error: "" })}
-        error={!!email.error}
-        errorText={email.error}
+        value={user}
+        onChangeText={(text) => setUser(text)}
         autoCapitalize="none"
-        autoCompleteType="email"
-        textContentType="emailAddress"
-        keyboardType="email-address"
       />
       <TextInput
         label="Contraseña"
         returnKeyType="done"
-        value={password.value}
-        onChangeText={(text) => setPassword({ value: text, error: "" })}
-        error={!!password.error}
-        errorText={password.error}
+        value={password}
+        onChangeText={(text) => setPassword(text)}
         secureTextEntry
       />
       <View style={styles.forgotPassword}>
@@ -62,11 +70,13 @@ export default function LoginScreen({ navigation }) {
           <Text style={styles.forgot}>¿Olvidaste tu contraseña?</Text>
         </TouchableOpacity>
       </View>
-      <Button mode="contained" onPress={onLoginPressed}>Ingresar</Button>
+      <Button mode="contained" onPress={onLoginPressed}>
+        Ingresar
+      </Button>
       <View style={styles.row}>
-        <Text style={{color: 'white'}}>Don’t have an account? </Text>
+        <Text style={{ color: "white" }}>¿No tienes una cuenta? </Text>
         <TouchableOpacity onPress={() => navigation.replace("RegisterScreen")}>
-          <Text style={styles.link}>Sign up</Text>
+          <Text style={styles.link}>Regístrate</Text>
         </TouchableOpacity>
       </View>
     </Background>

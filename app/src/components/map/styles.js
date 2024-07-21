@@ -8,8 +8,8 @@ export const styles = StyleSheet.create({
     justifyContent: "center",
   },
   map: {
-    width: "100%",
-    height: "100%",
+    width: "98%",
+    height: "95%",
   },
   searchContainer: {
     position: "absolute",

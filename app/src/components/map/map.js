@@ -8,13 +8,15 @@ import {
   FlatList,
   TouchableOpacity,
   Text,
+  Button,
 } from "react-native";
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { darkMapStyle, styles } from "./styles";
 import io from "socket.io-client";
 
-export default function App() {
+export default function MapScreen({ route, navigation }) {
+  const { email } = route.params;  // Obtén el correo de los parámetros de navegación
   const [origin, setOrigin] = useState(null);
   const [usersLocations, setUsersLocations] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -24,26 +26,30 @@ export default function App() {
 
   useEffect(() => {
     (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permiso denegado",
-          "Se necesita permiso para acceder a la ubicación.",
-          [{ text: "OK", onPress: () => BackHandler.exitApp() }]
-        );
-        return;
-      }
+      try {
+        let { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permiso denegado",
+            "Se necesita permiso para acceder a la ubicación.",
+            [{ text: "OK", onPress: () => BackHandler.exitApp() }]
+          );
+          return;
+        }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setOrigin({
-        latitude: location.coords.latitude,
-        longitude: location.coords.longitude,
-      });
+        let location = await Location.getCurrentPositionAsync({});
+        setOrigin({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        });
+      } catch (error) {
+        console.error("Error obteniendo la ubicación inicial:", error);
+      }
     })();
   }, []);
 
   useEffect(() => {
-    socketRef.current = io("http://192.168.43.122:3000"); // Reemplaza con tu IP y puerto correctos
+    socketRef.current = io("http://192.168.30.79:3000"); // Reemplaza con tu IP y puerto correctos
 
     socketRef.current.on("connect", () => {
       console.log("Conectado al servidor de Socket.IO");
@@ -52,7 +58,51 @@ export default function App() {
     socketRef.current.on("updateLocations", (locations) =>
       setUsersLocations(locations)
     );
+
+    socketRef.current.on("disconnect", () => {
+      console.log("Desconectado del servidor de Socket.IO");
+    });
+
+    return () => {
+      socketRef.current.disconnect();
+    };
   }, []);
+
+  useEffect(() => {
+    const sendLocation = () => {
+      if (origin) {
+        socketRef.current.emit("ubicacion", {
+          id: email, // Usar el correo como id
+          lat: origin.latitude,
+          lng: origin.longitude,
+        });
+      }
+    };
+
+    const locationInterval = setInterval(async () => {
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        const newOrigin = {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        };
+
+        if (
+          origin &&
+          (newOrigin.latitude !== origin.latitude ||
+            newOrigin.longitude !== origin.longitude)
+        ) {
+          setOrigin(newOrigin);
+        }
+
+        sendLocation();
+      } catch (error) {
+        console.error("Error obteniendo la ubicación periódica:", error);
+      }
+    }, 5000); // Enviar ubicación cada 5 segundos
+
+    return () => clearInterval(locationInterval);
+  }, [origin, email]);
 
   useEffect(() => {
     if (selectedUserLocation && mapRef.current) {
@@ -71,7 +121,7 @@ export default function App() {
   };
 
   const filteredLocations = usersLocations.filter((userLocation) =>
-    userLocation.name.toLowerCase().includes(searchText.toLowerCase())
+    userLocation.id.toLowerCase().includes(searchText.toLowerCase())
   );
 
   if (!origin) {
@@ -90,8 +140,8 @@ export default function App() {
         style={styles.map}
         customMapStyle={darkMapStyle}
         initialRegion={{
-          latitude: origin.latitude, // Se usa origin.latitude en lugar de la ubicación fija de Bogotá
-          longitude: origin.longitude, // Se usa origin.longitude en lugar de la ubicación fija de Bogotá
+          latitude: origin.latitude,
+          longitude: origin.longitude,
           latitudeDelta: 0.005,
           longitudeDelta: 0.002,
         }}
@@ -110,7 +160,7 @@ export default function App() {
             }}
           >
             <Callout>
-              <Text>{userLocation.name}</Text>
+              <Text>{userLocation.id}</Text>
             </Callout>
           </Marker>
         ))}
@@ -126,15 +176,19 @@ export default function App() {
           <FlatList
             style={styles.searchResults}
             data={filteredLocations}
-            keyExtractor={(item) => item.name}
+            keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <TouchableOpacity onPress={() => handleUserPress(item)}>
-                <Text style={styles.searchResultText}>{item.name}</Text>
+                <Text style={styles.searchResultText}>{item.id}</Text>
               </TouchableOpacity>
             )}
           />
         )}
       </View>
+      <Button
+        title="Ir a Inicio de Sesión"
+        onPress={() => navigation.navigate("LoginScreen")}
+      />
     </View>
   );
 }

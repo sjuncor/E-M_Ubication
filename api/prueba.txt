@@ -1,0 +1,12 @@
+let userLocations = [
+  { name: "User1", latitude: 4.60971, longitude: -74.08175 },
+  { name: "User2", latitude: 4.61271, longitude: -74.08275 },
+  { name: "User3", latitude: 4.61671, longitude: -74.08375 },
+  { name: "User4", latitude: 4.62071, longitude: -74.08475 },
+  { name: "User5", latitude: 4.62471, longitude: -74.08575 },
+  { name: "User6", latitude: 4.62871, longitude: -74.08675 },
+  { name: "User7", latitude: 4.63271, longitude: -74.08775 },
+  { name: "User8", latitude: 4.63671, longitude: -74.08875 },
+  { name: "User9", latitude: 4.64071, longitude: -74.08975 },
+  { name: "User10", latitude: 4.64471, longitude: -74.09075 },
+];
