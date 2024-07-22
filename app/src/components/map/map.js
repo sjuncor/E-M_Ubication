@@ -16,7 +16,7 @@ import { darkMapStyle, styles } from "./styles";
 import io from "socket.io-client";
 
 export default function MapScreen({ route, navigation }) {
-  const { email } = route.params;  // Obtén el correo de los parámetros de navegación
+  const { usuario } = route.params; // Obtén el usuario de los parámetros de navegación
   const [origin, setOrigin] = useState(null);
   const [usersLocations, setUsersLocations] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -49,7 +49,7 @@ export default function MapScreen({ route, navigation }) {
   }, []);
 
   useEffect(() => {
-    socketRef.current = io("http://192.168.30.79:3000"); // Reemplaza con tu IP y puerto correctos
+    socketRef.current = io("http://192.168.0.7:3000"); // Reemplaza con tu IP y puerto correctos
 
     socketRef.current.on("connect", () => {
       console.log("Conectado al servidor de Socket.IO");
@@ -72,7 +72,7 @@ export default function MapScreen({ route, navigation }) {
     const sendLocation = () => {
       if (origin) {
         socketRef.current.emit("ubicacion", {
-          id: email, // Usar el correo como id
+          id: usuario, // Usar el correo como id
           lat: origin.latitude,
           lng: origin.longitude,
         });
@@ -102,7 +102,7 @@ export default function MapScreen({ route, navigation }) {
     }, 5000); // Enviar ubicación cada 5 segundos
 
     return () => clearInterval(locationInterval);
-  }, [origin, email]);
+  }, [origin, usuario]);
 
   useEffect(() => {
     if (selectedUserLocation && mapRef.current) {

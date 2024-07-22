@@ -16,18 +16,18 @@ export default function LoginScreen({ navigation }) {
 
   const onLoginPressed = async () => {
     try {
-      const response = await axios.get(`http://192.168.43.122:3000/usuario/${user}/${password}`);
+      const response = await axios.get(`http://192.168.0.7:3000/usuario/${user}/${password}`);
       if (response.data.length > 0) {
         const userData = response.data[0];
         if (userData.Tipo === 'Lider') {
           navigation.reset({
             index: 0,
-            routes: [{ name: "Map", params: { u: user } }],
+            routes: [{ name: "Map", params: { usuario: user } }],
           });
         } else if (userData.Tipo === 'Empleado') {
           navigation.reset({
             index: 0,
-            routes: [{ name: "Appsheet", params: { u: user } }],
+            routes: [{ name: "Appsheet", params: { usuario: user } }],
           });
         } else {
           Alert.alert("Error", "Tipo de usuario no reconocido");
